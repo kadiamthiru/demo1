@@ -1,0 +1,175 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "publicipname": {
+           "type": "string",
+           "metadata": {
+                "description": "Name of the public ip"
+            }
+        },
+        "vnetname": {
+           "type": "string",
+           "metadata": {
+                "description": "Name of the virtual network"
+            }
+        },
+        "snetname": {
+           "type": "string",
+           "metadata": {
+                "description": "Name of the subnet"
+            }
+        },
+        "nicname": {
+           "type": "string",
+           "metadata": {
+                "description": "Name of the nic"
+            }
+        },
+        "vmname": {
+           "type": "string",
+           "metadata": {
+                "description": "Name of the virtual machine"
+            }
+        },
+        "vmcount": {
+           "type": "int"
+         
+        },
+        "adminusername": {
+           "type": "string",
+           "metadata": {
+                "description": "This is the username for login to vm"
+            }
+        },
+        "adminpassword": {
+           "type": "string",
+           "metadata": {
+                "description": "This is the password for login to"
+            }
+        }
+    },
+    "variables": {},
+    "resources": [
+       
+            {
+                "name": "[concat(parameters('publicipname'),copyIndex(1))]",
+                "type": "Microsoft.Network/publicIPAddresses",
+                "apiVersion": "2018-08-01",
+                "location": "[resourceGroup().location]",
+                "properties": {
+                    "publicIPAllocationMethod": "Dynamic"
+                   
+                },
+                "copy": {
+        "name": "nodeCopy",
+        "count": "[parameters('vmCount')]"
+                
+            }
+            },
+        {
+            "name": "[parameters('vnetname')]",
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2018-08-01",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "VirtualNetwork"
+            },
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.0.0.0/16"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[parameters('snetname')]",
+                        "properties": {
+                            "addressPrefix": "10.0.0.0/24"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[concat(parameters('nicname'),copyIndex(1))]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2018-08-01",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', concat(parameters('publicipname'),copyIndex(1)))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetname'))]"
+            ],
+           
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "[concat('ipconfig1',copyIndex(1))]",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(parameters('publicipname'),copyIndex(1)))]"
+                            },
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetname'), parameters('snetname'))]"
+                            }
+                        }
+                    }
+                ]
+            },
+            "copy": {
+        "name": "nodeCopy",
+        "count": "[parameters('vmCount')]"
+        }
+        },
+
+        {
+            "name": "[parameters('vmname')]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2017-03-30",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+            
+                "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('nicname'),copyIndex(1)))]"
+            ],
+            
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "Standard_A2"
+                },
+                "osProfile": {
+                    "computerName": "[concat(parameters('vmname'),copyIndex(1))]",
+                    "adminUsername": "[parameters('adminusername')]",
+                    "adminPassword": "[parameters('adminpassword')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "MicrosoftWindowsServer",
+                        "offer": "WindowsServer",
+                        "sku": "2016-Datacenter",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "name": "[concat(parameters('vmname'),'-osdisk',copyIndex(1))]",
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('nicname'),copyIndex(1)))]"
+                        }
+                    ]
+                }
+                
+            },
+                "copy": {
+            "name": "nodeCopy",
+            "count": "[parameters('vmCount')]"
+            }
+           
+        }
+    ],
+    "outputs": {}
+}

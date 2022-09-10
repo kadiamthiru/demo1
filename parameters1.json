@@ -1,0 +1,44 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "storageaccountname": {
+            "value": "azdemosa202207"
+        },
+        "virtualnetworkname": {
+            "value": "demo-vnet-01"
+        },
+        "publicipname": {
+            "value": "demo-pubip-01"
+        },
+        "windowsvmname": {
+            "value": "demo-vm-01"
+        },
+        "vmsize": {
+            "value": "Standard_B1s"
+        },
+        "subnet1name": {
+            "value": "demo-snet-1"
+        },
+        "nicname": {
+            "value": "demo-nic-01"
+        },
+        "nsgname": {
+            "value": "demo-nsg-01"
+        },
+        "subnet2name": {
+            "value": "demo-snet-2"
+        },
+        "adminusername": {
+            "value": "azureuser123"
+        },
+        "adminPassword": {
+            "reference": {
+              "keyVault": {
+                "id": "/subscriptions/44d288d3-9f96-4784-94a8-b5bd88257c6a/resourceGroups/arm-rg-1-2/providers/Microsoft.KeyVault/vaults/thirukeyvault"
+              },
+              "secretName": "windowsvmpassword"
+            }
+          }
+    }
+}

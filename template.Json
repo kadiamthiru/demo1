@@ -1,0 +1,159 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "vmname": {
+           "type": "string",
+           "metadata": {
+                "description": "Name of the virtual machine"
+            }
+        },
+        "adminusername": {
+           "type": "string",
+           "metadata": {
+                "description": "This is the user name to login to vm"
+            }
+        },
+        "adminpassword": {
+           "type": "string",
+           "metadata": {
+                "description": "This is the password for login to vm"
+            }
+        },
+            "vmCount": {
+        "type": "int"
+        
+                       }
+    },
+    "variables": {
+        "publicipname": "vmpubip1",
+        "virtualnetworkname": "vnet1",
+        "subnetname": "snet1",
+        "nicname": "nic1"
+    },
+    "resources": [
+       
+        {
+            "name": "[concat(variables('publicipname'),copyIndex(1))]",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2018-08-01",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "PublicIPAddress"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic"
+                
+            },
+            "copy": {
+    "name": "nodeCopy",
+    "count": "[parameters('vmCount')]"
+}
+        },
+        {
+            "name": "[variables('virtualnetworkname')]",
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2018-08-01",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "VirtualNetwork"
+            },
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.0.0.0/16"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[variables('subnetname')]",
+                        "properties": {
+                            "addressPrefix": "10.0.0.0/24"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[concat(variables('nicname'),copyIndex(1))]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2018-08-01",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', concat(variables('publicipname'),copyIndex(1)))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualnetworkname'))]"
+            ],
+            "tags": {
+                "displayName": "windowsVM1 Network Interface"
+            },
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "[concat('ipconfig1',copyIndex(1))]",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(variables('publicipname'),copyIndex(1)))]"
+                            },
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualnetworkname'), variables('subnetname'))]"
+                            }
+                        }
+                    }
+                ]
+            },
+            "copy": {
+    "name": "nodeCopy",
+    "count": "[parameters('vmCount')]"
+}
+        },
+        {
+            "name": "[concat(parameters('vmname'),copyIndex(1))]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2017-03-30",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+            
+                "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('nicname'),copyIndex(1)))]"
+            ],
+           
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "Standard_DS1_v2"
+                },
+                "osProfile": {
+                    "computerName": "[concat(parameters('vmname'),copyIndex(1))]",
+                    "adminUsername": "[parameters('adminusername')]",
+                    "adminPassword": "[parameters('adminpassword')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "MicrosoftWindowsServer",
+                        "offer": "WindowsServer",
+                        "sku": "2016-Datacenter",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "name": "[concat(parameters('vmname'),'-osdisk',copyIndex(1))]",
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('nicname'),copyIndex(1)))]"
+                        }
+                    ]
+                }
+               
+            },
+                "copy": {
+        "name": "nodeCopy",
+        "count": "[parameters('vmCount')]"
+    }
+          
+        }
+    ],
+    "outputs": {}
+}

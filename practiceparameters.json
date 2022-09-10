@@ -1,0 +1,30 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "publicipname": {
+            "value": "thirupubip"
+        },
+        "vnetname": {
+            "value": "thiruvnet"
+        },
+        "snetname": {
+            "value": "thirusnet"
+        },
+        "nicname": {
+            "value": "thirunic"
+        },
+        "vmname": {
+            "value": "thiruvm"
+        },
+        "vmcount": {
+            "value": 2
+        },
+        "adminusername": {
+            "value": "thiruvm123"
+        },
+        "adminpassword": {
+            "value": "Thirupassword@123"
+        }
+    }
+}
